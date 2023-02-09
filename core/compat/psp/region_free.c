@@ -299,8 +299,28 @@ void patch_region(void)
 
 }
 
+int (*_vshChkregCheckRegionOrig)(u32 a0, u32 a1) = NULL;
+int _vshChkregCheckRegionPatched(u32 a0, u32 a1){
+
+	// US reg locked disc: a0:0x00000020 a1:0x0000000F
+
+	int res = _vshChkregCheckRegionOrig(a0, a1);
+
+	return 1;
+}
+
 void patch_vsh_main_region(SceModule2* mod){
-	hookImportByNID(mod, "sceVshBridge", 0x5C2983C2, 1);
+	//hookImportByNID(mod, "sceVshBridge", 0x5C2983C2, 1);
+	
+	
+	u32 f = sctrlHENFindFunction("sceVshBridge_Driver", "sceVshBridge", 0x5C2983C2);
+	/*
+	_sw(JUMP(&_vshChkregCheckRegionPatched), f);
+	_sw(NOP, f+4);
+	*/
+
+	HIJACK_FUNCTION(f, _vshChkregCheckRegionPatched, _vshChkregCheckRegionOrig);
+
 }
 
 int patch_umd_thread(SceSize args, void *argp){
